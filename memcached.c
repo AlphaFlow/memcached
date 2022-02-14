@@ -74,6 +74,7 @@
 /*
  * forward declarations
  */
+static void sigign(int);
 static void drive_machine(conn *c);
 static int new_socket(struct addrinfo *ai);
 static int try_read_command(conn *c);
@@ -170,6 +171,9 @@ ssize_t tcp_write(conn *c, void *buf, size_t count) {
 }
 
 static enum transmit_result transmit(conn *c);
+
+
+static void sigign(int s) { }
 
 /* This reduces the latency without adding lots of extra wiring to be able to
  * notify the listener thread of when to listen again.
@@ -7919,7 +7923,7 @@ int main (int argc, char **argv) {
     /* daemonize if requested */
     /* if we want to ensure our ability to dump core, don't chdir to / */
     if (do_daemonize) {
-        if (sigignore(SIGHUP) == -1) {
+        if (signal(SIGHUP, sigign)) {
             perror("Failed to ignore SIGHUP");
         }
         if (daemonize(maxcore, settings.verbose) == -1) {
@@ -7992,7 +7996,7 @@ int main (int argc, char **argv) {
      * ignore SIGPIPE signals; we can use errno == EPIPE if we
      * need that information
      */
-    if (sigignore(SIGPIPE) == -1) {
+    if (signal(SIGPIPE, sigign)) {
         perror("failed to ignore SIGPIPE; sigaction");
         exit(EX_OSERR);
     }
